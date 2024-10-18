@@ -1,15 +1,16 @@
-
 import sys
 from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QSlider ,QGraphicsView, QGraphicsScene, QGraphicsItem, QPushButton
 from PyQt6.QtCore import Qt, QTimer, QRectF
 from PyQt6.QtGui import QPen, QColor, QPainter, QPainterPath
+from neusimu import Neuron, Simulation
+from typing import Optional, List
 
 class NeuronWidget(QGraphicsItem):
-    def __init__(self, name, x, y, Neuron):
+    def __init__(self, name, x, y, neuron):
         super().__init__()
         self.name = name
         self.setPos(x, y)
-        self.neuron = Neuron
+        self.neuron = neuron
         self.setZValue(1)
 
         def boudingRect(self):
@@ -24,7 +25,7 @@ class NeuronWidget(QGraphicsItem):
 
 
 class NetworkWidget(QGraphicsView):
-    def __init__(self, neurons, connections = None):
+    def __init__(self, neurons : List[Neuron], connections = None):
         super().__init__()
         self.setRenderHint(QPainter.RenderHints.Antialiasing)
         self.setScene(QGraphicsScene(self))
@@ -41,15 +42,20 @@ class NetworkWidget(QGraphicsView):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, simu, neurons, populations = None , connections = None):
+    def __init__(self, simu : Simulation, tmax = 0.0):
         super().__init__()
         self.simu = simu
         self.playing = False
+
+
+        neurons = simu.neurons
+        connections = simu.projections
         
         central_widget = QWidget()
         layout = QVBoxLayout()
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
+
 
         # Buttons
         button_layout = QHBoxLayout()
@@ -64,13 +70,13 @@ class MainWindow(QMainWindow):
         layout.addLayout(button_layout)
 
 
-        slider_layout = QHBoxLayout()
-        self.t_slider = QSlider(Qt.Horizontal)
-        self.t_slider.setMinimum(0)
-        self.t_slider.setMaximum(tmax - 1)
-        self.t_slider.setValue(0)
-        self.t_slider.valueChanged.connect(self.update_graph)
-        slider_layout.addWidget(self.t_slider)
+        # slider_layout = QHBoxLayout()
+        # self.t_slider = QSlider(Qt.Orientation.Horizontal)
+        # self.t_slider.setMinimum(0)
+        # self.t_slider.setMaximum(tmax - 1)
+        # self.t_slider.setValue(0)
+        # self.t_slider.valueChanged.connect(self.update_graph)
+        # slider_layout.addWidget(self.t_slider)
 
         self.network_widget = NetworkWidget(neurons = neurons, connections = connections)
         layout.addWidget(self.network_widget)
@@ -113,9 +119,7 @@ class MainWindow(QMainWindow):
 
 def simu_viewer(simu):
 
-    neurons = [[n.name, key[0], key[1], n] for key, n in simu.neurons.items()]
-
     app = QApplication(sys.argv)
-    wind = MainWindow(simu, neurons)
+    wind = MainWindow(simu)
     wind.show()
     sys.exit(app.exec())

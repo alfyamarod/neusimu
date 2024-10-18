@@ -3,8 +3,8 @@ from neusimu import Neuron, Synapse, Population, Simulation, Projection
 import matplotlib.pyplot as plt 
 
 class SlcaNeuron(Neuron):
-    def __init__(self, name, synapse, v_init=0.0, v_thresh=1.0, v_reset=0.0):
-        super().__init__(name, synapse)
+    def __init__(self, name, synapse_model, synapse_parameters, synapse_types, v_init=0.0, v_thresh=1.0, v_reset=0.0):
+        super().__init__(name, synapse_model, synapse_parameters, synapse_types)
         self.state= v_init
         self.v_thresh= v_thresh
         self._b = 0
@@ -40,7 +40,7 @@ class SlcaNeuron(Neuron):
 
 class SlcaSynapse(Synapse):
     def __init__(self, synapses_types, decay_rate):
-        super().__init__(synapses_types)
+        super().__init__(synapses_types, {"decay_rate" : decay_rate})
         self.decay_rate = decay_rate
 
     def update_current_input(self, timestep):
@@ -51,7 +51,7 @@ class SlcaSynapse(Synapse):
 def main():
 
     total_time = 10
-    time_step = 0.1
+    time_step = 0.01
     N=3
     received_signal = np.array([0.5, 1, 1.5])
 
@@ -73,10 +73,9 @@ def main():
 
     neurons = []
     for i in range(N):
-        neurons.append(SlcaNeuron(f"n{i}", None))
+        neurons.append(SlcaNeuron(f"n{i}", synapse_model=SlcaSynapse, synapse_parameters={}, synapse_types={"inhbitory"}))
         neurons[i]._b = b[i]
         neurons[i]._lamb = 0.1
-        print(neurons[i]._b)
     
     
     connection_list = []
@@ -90,9 +89,11 @@ def main():
                 sc = ((i, j, 0))
                 connection_list.append(sc)
 
-    sim.add_neurons(neuron=neurons)
+    sim.add_neurons(neurons=neurons)
 
     proj = Projection(neurons, neurons, connection_list)
+
+    sim.add_projection(proj)
 
     sim.record("state")
 
